@@ -1,0 +1,6 @@
+# Default values for workflow.
+
+workflow:
+  replicas: 1
+  resources: {}
+  imagePullPolicy: IfNotPresent
