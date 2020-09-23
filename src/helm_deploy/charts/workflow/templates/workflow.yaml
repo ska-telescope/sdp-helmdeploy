@@ -1,0 +1,34 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "workflow.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+{{ include "workflow.labels" . | indent 4 }}
+spec:
+  completions: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "workflow.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      containers:
+      - image: {{ .Values.wf_image }}
+        imagePullPolicy: {{ .Values.workflow.imagePullPolicy }}
+        name: {{ .Chart.Name }}
+        {{- with .Values.workflow.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- if .Values.env }}
+        env:
+        {{- range $key, $val := .Values.env }}
+        - name: {{ $key }}
+          value: {{ $val }}
+        {{- end }}
+        {{- end }}
+        args:
+          - {{ .Values.pb_id }}
+      restartPolicy: Never
+  backoffLimit: 0
