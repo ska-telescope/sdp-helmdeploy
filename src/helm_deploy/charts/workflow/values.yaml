@@ -1,5 +1,0 @@
-# Default values for workflow.
-
-workflow:
-  resources: {}
-  imagePullPolicy: IfNotPresent

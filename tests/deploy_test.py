@@ -1,6 +1,6 @@
 from unittest.mock import patch
 
-import helm_deploy as deploy
+import ska_sdp_helmdeploy as deploy
 from ska_sdp_config import Config, Deployment
 
 
