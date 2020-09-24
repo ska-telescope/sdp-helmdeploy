@@ -29,22 +29,10 @@ autodoc_mock_imports = [
     'kubernetes'
 ]
 
-import os
-import sys
 import sphinx_rtd_theme
 
 
 # -- Path set up --------------------------------------------------------------
-
-sys.path.insert(0, os.path.abspath(
-    os.path.join('..', '..', 'src', 'lmc')
-))
-sys.path.insert(0, os.path.abspath(
-    os.path.join('..', '..', 'src', 'config_db')
-))
-sys.path.insert(0, os.path.abspath(
-    os.path.join('..', '..', 'src', 'logging')
-))
 
 
 def setup(app):
@@ -54,7 +42,7 @@ def setup(app):
 
 # -- Project information -----------------------------------------------------
 project = 'developer.skatelescope.org'
-copyright = '2019, ORCA Team, Sim Team'
+copyright = '2019-2020, ORCA Team, Sim Team'
 author = 'Sim Team'
 
 
