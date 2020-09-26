@@ -30,10 +30,7 @@ setuptools.setup(
         'pylint2junit',
         'pytest',
         'pytest-cov',
-        'pytest-json-report',
-        'pytest-pycodestyle',
-        'pytest-pydocstyle',
-        'pytest-pylint',
+        'pytest-pylint'
     ],
     zip_safe=False,
     classifiers=[
