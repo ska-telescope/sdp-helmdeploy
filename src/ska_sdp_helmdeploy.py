@@ -125,11 +125,15 @@ def create_helm(txn, dpl_id, deploy):
     return False
 
 
-def main():
-    """Main loop of Helm controller."""
+def main(backend='etcd3'):
+    """
+    Main loop of Helm controller.
+
+    :param backend: for configuration database
+    """
 
     # Instantiate configuration
-    client = ska_sdp_config.Config()
+    client = ska_sdp_config.Config(backend=backend)
 
     # TODO: Service lease + leader election
 

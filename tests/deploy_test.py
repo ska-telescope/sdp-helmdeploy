@@ -35,3 +35,7 @@ def test_create(mock_run):
 
     mock_run.assert_called_once()
 
+
+@patch('subprocess.run')
+def test_main(mock_run):
+    deploy.main(backend='memory')
