@@ -9,10 +9,12 @@ the SDP configuration.
 
 import logging
 import os
-import time
-import subprocess
 import signal
 import shutil
+import subprocess
+import sys
+import time
+
 import ska_sdp_config
 from ska.logging import configure_logging
 from dotenv import load_dotenv
@@ -200,7 +202,7 @@ def main(backend='etcd3'):
 def terminate(signal, frame):
     """Terminate the program."""
     log.info("Asked to terminate")
-    exit(0)
+    sys.exit(0)
 
 
 if __name__ == '__main__':
