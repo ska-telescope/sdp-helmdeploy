@@ -24,6 +24,15 @@ def test_delete(mock_run):
     assert mock_run.call_count == 2
 
 
+@patch('subprocess.run')
+def test_update(mock_run):
+    deploy.update_helm()
+    mock_run.assert_called_once()
+    mock_run.side_effect = subprocess.CalledProcessError(1, 'test')
+    deploy.update_helm()
+    assert mock_run.call_count == 2
+
+
 def run_create(mock_run, config, byte_string=None):
 
     if byte_string is not None:
@@ -45,6 +54,7 @@ def test_create(mock_run):
         txn.create_deployment(
             Deployment('test', 'helm', {'chart': 'test', 'values': {'test': 'test'}})
         )
+        assert deploy._get_deployment(txn, 'test') is not None
 
     assert run_create(mock_run, config)
     mock_run.assert_called_once()

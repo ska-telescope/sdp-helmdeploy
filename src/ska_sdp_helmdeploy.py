@@ -127,6 +127,23 @@ def create_helm(txn, dpl_id, deploy):
     return False
 
 
+def update_helm():
+    """ Update helm deployment. """
+    try:
+        helm_invoke("repo", "update")
+    except subprocess.CalledProcessError as e:
+        log.error("Could not refresh chart repositories")
+
+
+def _get_deployment(txn, dpl_id):
+    try:
+        return txn.get_deployment(dpl_id)
+    except ValueError as e:
+        log.warning("Deployment {} failed validation: {}!".format(
+            dpl_id, str(e)))
+    return None
+
+
 def main(backend='etcd3'):
     """
     Main loop of Helm controller.
@@ -142,7 +159,7 @@ def main(backend='etcd3'):
     # Load Helm repositories
     for name, url in CHART_REPO_LIST:
         helm_invoke("repo", "add", name, url)
-    helm_invoke("repo", "update")
+    update_helm()
 
     next_chart_refresh = time.time() + CHART_REPO_REFRESH
 
@@ -160,11 +177,7 @@ def main(backend='etcd3'):
         # Refresh charts?
         if time.time() > next_chart_refresh:
             next_chart_refresh = time.time() + CHART_REPO_REFRESH
-
-            try:
-                helm_invoke("repo", "update")
-            except subprocess.CalledProcessError as e:
-                log.error("Could not refresh chart repositories")
+            update_helm()
 
         # List deployments
         target_deploys = txn.list_deployments()
@@ -180,15 +193,10 @@ def main(backend='etcd3'):
             if dpl_id not in deploys:
 
                 # Get details
-                try:
-                    deploy = txn.get_deployment(dpl_id)
-                except ValueError as e:
-                    log.warning("Deployment {} failed validation: {}!".format(
-                        dpl_id, str(e)))
-                    continue
+                deploy = _get_deployment(txn, dpl_id)
 
                 # Right type?
-                if deploy.type != 'helm':
+                if deploy is None or deploy.type != 'helm':
                     continue
 
                 # Create it
