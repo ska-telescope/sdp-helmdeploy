@@ -9,10 +9,12 @@ the SDP configuration.
 
 import logging
 import os
-import time
-import subprocess
 import signal
 import shutil
+import subprocess
+import sys
+import time
+
 import ska_sdp_config
 from ska.logging import configure_logging
 from dotenv import load_dotenv
@@ -125,18 +127,39 @@ def create_helm(txn, dpl_id, deploy):
     return False
 
 
-def main():
-    """Main loop of Helm controller."""
+def update_helm():
+    """ Update helm deployment. """
+    try:
+        helm_invoke("repo", "update")
+    except subprocess.CalledProcessError as e:
+        log.error("Could not refresh chart repositories")
+
+
+def _get_deployment(txn, dpl_id):
+    try:
+        return txn.get_deployment(dpl_id)
+    except ValueError as e:
+        log.warning("Deployment {} failed validation: {}!".format(
+            dpl_id, str(e)))
+    return None
+
+
+def main(backend='etcd3'):
+    """
+    Main loop of Helm controller.
+
+    :param backend: for configuration database
+    """
 
     # Instantiate configuration
-    client = ska_sdp_config.Config()
+    client = ska_sdp_config.Config(backend=backend)
 
     # TODO: Service lease + leader election
 
     # Load Helm repositories
     for name, url in CHART_REPO_LIST:
         helm_invoke("repo", "add", name, url)
-    helm_invoke("repo", "update")
+    update_helm()
 
     next_chart_refresh = time.time() + CHART_REPO_REFRESH
 
@@ -154,11 +177,7 @@ def main():
         # Refresh charts?
         if time.time() > next_chart_refresh:
             next_chart_refresh = time.time() + CHART_REPO_REFRESH
-
-            try:
-                helm_invoke("repo", "update")
-            except subprocess.CalledProcessError as e:
-                log.error("Could not refresh chart repositories")
+            update_helm()
 
         # List deployments
         target_deploys = txn.list_deployments()
@@ -174,15 +193,10 @@ def main():
             if dpl_id not in deploys:
 
                 # Get details
-                try:
-                    deploy = txn.get_deployment(dpl_id)
-                except ValueError as e:
-                    log.warning("Deployment {} failed validation: {}!".format(
-                        dpl_id, str(e)))
-                    continue
+                deploy = _get_deployment(txn, dpl_id)
 
                 # Right type?
-                if deploy.type != 'helm':
+                if deploy is None or deploy.type != 'helm':
                     continue
 
                 # Create it
@@ -196,7 +210,7 @@ def main():
 def terminate(signal, frame):
     """Terminate the program."""
     log.info("Asked to terminate")
-    exit(0)
+    sys.exit(0)
 
 
 if __name__ == '__main__':
