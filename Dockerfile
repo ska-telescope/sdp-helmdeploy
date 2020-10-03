@@ -7,9 +7,9 @@ RUN curl https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz | tar xz \
     && rm -r linux-amd64
 
 WORKDIR /app
-COPY . ./
+COPY . dist ./
 
-RUN pip install -r requirements.txt
+RUN pip install -r requirements.txt -f .
 RUN pip install .
 
 ENTRYPOINT ["python", "-m", "ska_sdp_helmdeploy"]
