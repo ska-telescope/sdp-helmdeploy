@@ -23,7 +23,8 @@ fetch_artifacts:
      - >
        if [ $UPSTREAM_BRANCH_NAME ]; then
           echo "We are downstream"
-          curl --location --output artifacts.zip --header "JOB-TOKEN: $CI_JOB_TOKEN" "https://gitlab.com/api/v4/projects/21141282/jobs/artifacts/$UPSTREAM_BRANCH_NAME/download job=build_dev"
+          echo "Upstream pipeline $UPSTREAM_PIPELINE_ID on branch $UPSTREAM_BRANCH_NAME"
+          curl --location --output artifacts.zip --header "JOB-TOKEN: $CI_JOB_TOKEN" "https://gitlab.com/api/v4/projects/21141282/jobs/artifacts/$UPSTREAM_BRANCH_NAME/download?job=build_dev"
           unzip artifacts.zip
        else
           echo "We are standalone"
