@@ -23,21 +23,26 @@
 autodoc_mock_imports = [
     'PyTango',
     'tango',
-    'skabase',
+    'ska',
     'etcd3',
     'jsonschema',
     'kubernetes'
 ]
 
+import os
+import sys
 import sphinx_rtd_theme
 
 
 # -- Path set up --------------------------------------------------------------
 
+sys.path.insert(0, os.path.abspath(
+    os.path.join('..', '..', 'src')
+))
 
 def setup(app):
-    app.add_stylesheet('css/custom.css')
-    app.add_javascript('js/github.js')
+    app.add_css_file('css/custom.css')
+    app.add_js_file('js/github.js')
 
 
 # -- Project information -----------------------------------------------------
@@ -74,7 +79,7 @@ extensions = [
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
-    'm2r'
+    'm2r2'
 ]
 
 # Add any paths that contain templates here, relative to this directory.

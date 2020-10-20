@@ -5,8 +5,7 @@ This repository contains a set of packages for deploying a minimal SDP
 system capable of configuring and executing workflows.
 
 .. toctree::
-  :maxdepth: 1
-  :caption: Helm deployer
+  :maxdepth: 2
 
   helm_deployer
 
