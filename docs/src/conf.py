@@ -18,20 +18,14 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 
-# autodoc_mock_imports = ['PyTango', 'tango', 'tango.server', 'run',
-#                         'DeviceMeta', 'command']
 autodoc_mock_imports = [
-    'PyTango',
-    'tango',
+    'dotenv',
     'ska',
-    'etcd3',
-    'jsonschema',
-    'kubernetes'
+    'ska_sdp_config',
 ]
 
 import os
 import sys
-import sphinx_rtd_theme
 
 
 # -- Path set up --------------------------------------------------------------
@@ -46,9 +40,9 @@ def setup(app):
 
 
 # -- Project information -----------------------------------------------------
-project = 'developer.skatelescope.org'
-copyright = '2019-2020, ORCA Team, Sim Team'
-author = 'Sim Team'
+project = 'SDP Helm Deployer'
+copyright = '2019-2020, SKA SDP Developers'
+author = 'SKA SDP Developers'
 
 
 # The version info for the project you're documenting, acts as replacement for
@@ -56,9 +50,9 @@ author = 'Sim Team'
 # built documents.
 #
 # The short X.Y.Z version.
-version = '0.1.1'
+version = '0.7.1'
 # The full version, including alpha/beta/rc pre-release tags.
-release = '0.1.1-beta'
+release = '0.7.1'
 
 # -- General configuration ------------------------------------------------
 

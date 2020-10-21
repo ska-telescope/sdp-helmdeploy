@@ -1,13 +1,15 @@
-SDP Helm deployer
+SDP Helm Deployer
 =================
 
-This repository contains a set of packages for deploying a minimal SDP
-system capable of configuring and executing workflows.
+This Helm deployer is a prototype of a platform controller for SDP. It
+installs/updates/uninstalls Helm releases depending on information in the SDP
+configuration.
+
 
 .. toctree::
-  :maxdepth: 2
+  :maxdepth: 1
 
-  helm_deployer
+  api
 
 
 Indices and tables
