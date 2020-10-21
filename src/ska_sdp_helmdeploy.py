@@ -1,8 +1,8 @@
 """
 Helm deployment controller.
 
-Applies/updates/deletes Helm releases depending on information from
-the SDP configuration.
+Installs/updates/uninstalls Helm releases depending on information in the SDP
+configuration.
 """
 
 # pylint: disable=C0103
@@ -43,10 +43,12 @@ log = logging.getLogger(__name__)
 
 
 def invoke(*cmd_line):
-    """Invoke a command with the given command-line arguments
+    """
+    Invoke a command with the given command line.
 
-    :returns: Output of the command
-    :raises: `subprocess.CalledProcessError` if command returns an error status
+    :returns: output of the command
+    :raises: ``subprocess.CalledProcessError`` if command returns an error status
+
     """
     # Perform call
     log.debug(" ".join(["$"] + list(cmd_line)))
@@ -66,17 +68,24 @@ def invoke(*cmd_line):
 
 
 def helm_invoke(*args):
-    """Invoke Helm with the given command-line arguments
+    """
+    Invoke Helm with the given command-line arguments.
 
-    :returns: Output of the command
-    :raises: `subprocess.CalledProcessError` if command returns an error status
+    :returns: output of the command
+    :raises: ``subprocess.CalledProcessError`` if command returns an error status
+
     """
     return invoke(*([HELM] + list(args)))
 
 
 def delete_helm(txn, dpl_id):
-    """Delete a Helm deployment."""
+    """
+    Delete a Helm deployment.
 
+    :param txn: config DB transaction
+    :param dpl_id: deployment ID
+
+    """
     # Try to delete
     try:
         helm_invoke('uninstall', dpl_id, '-n', NAMESPACE)
@@ -86,8 +95,14 @@ def delete_helm(txn, dpl_id):
 
 
 def create_helm(txn, dpl_id, deploy):
-    """Create a new Helm deployment."""
+    """
+    Create a new Helm deployment.
 
+    :param txn: config DB transaction
+    :param dpl_id: deployment ID
+    :param deploy: the deployment
+
+    """
     # Attempt install
     log.info("Creating deployment {}...".format(dpl_id))
 
@@ -128,7 +143,7 @@ def create_helm(txn, dpl_id, deploy):
 
 
 def update_helm():
-    """ Update helm deployment. """
+    """Refresh Helm chart repositories."""
     try:
         helm_invoke("repo", "update")
     except subprocess.CalledProcessError as e:
@@ -149,8 +164,8 @@ def main(backend='etcd3'):
     Main loop of Helm controller.
 
     :param backend: for configuration database
-    """
 
+    """
     # Instantiate configuration
     client = ska_sdp_config.Config(backend=backend)
 
