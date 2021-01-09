@@ -27,7 +27,7 @@ HELM_TIMEOUT = int(os.getenv('SDP_HELM_TIMEOUT', '300'))
 NAMESPACE = os.getenv('SDP_HELM_NAMESPACE', 'sdp')
 PREFIX = os.getenv('SDP_HELM_PREFIX', '')
 CHART_REPO_URL = os.getenv('SDP_CHART_REPO_URL',
-                           'https://gitlab.com/ska-telescope/sdp-helmdeploy-charts/-/raw/master/chart-repo/')
+                           'https://gitlab.com/ska-telescope/sdp/ska-sdp-helmdeploy-charts/-/raw/master/chart-repo/')
 CHART_REPO_REFRESH = int(os.getenv('SDP_CHART_REPO_REFRESH', '300'))
 LOG_LEVEL = os.getenv('SDP_LOG_LEVEL', 'DEBUG')
 
