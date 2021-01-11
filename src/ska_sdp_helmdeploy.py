@@ -131,7 +131,8 @@ def create_helm(txn, dpl_id, deploy):
         chart = CHART_REPO_NAME + '/' + chart
 
     # Build command line
-    cmd = ['install', dpl_id, chart, '-n', NAMESPACE]
+    release = release_name(dpl_id)
+    cmd = ['install', release, chart, '-n', NAMESPACE]
 
     # Encode any parameters
     if 'values' in deploy.args and isinstance(deploy.args, dict):
@@ -150,7 +151,7 @@ def create_helm(txn, dpl_id, deploy):
         if "already exists" in e.stdout.decode():
             try:
                 log.info("Purging deployment {}...".format(dpl_id))
-                helm_invoke('uninstall', dpl_id, '-n', NAMESPACE)
+                helm_invoke('uninstall', release, '-n', NAMESPACE)
                 txn.loop()  # Force loop, this will cause a re-attempt
             except subprocess.CalledProcessError:
                 log.error("Could not purge deployment {}!".format(dpl_id))
