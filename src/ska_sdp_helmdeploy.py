@@ -14,6 +14,7 @@ import shutil
 import subprocess
 import sys
 import time
+import re
 
 import ska_sdp_config
 from ska.logging import configure_logging
@@ -24,8 +25,9 @@ load_dotenv()
 HELM = shutil.which(os.getenv('SDP_HELM', 'helm'))
 HELM_TIMEOUT = int(os.getenv('SDP_HELM_TIMEOUT', '300'))
 NAMESPACE = os.getenv('SDP_HELM_NAMESPACE', 'sdp')
+PREFIX = os.getenv('SDP_HELM_PREFIX', '')
 CHART_REPO_URL = os.getenv('SDP_CHART_REPO_URL',
-                           'https://gitlab.com/ska-telescope/sdp-helmdeploy-charts/-/raw/master/chart-repo/')
+                           'https://gitlab.com/ska-telescope/sdp/ska-sdp-helmdeploy-charts/-/raw/master/chart-repo/')
 CHART_REPO_REFRESH = int(os.getenv('SDP_CHART_REPO_REFRESH', '300'))
 LOG_LEVEL = os.getenv('SDP_LOG_LEVEL', 'DEBUG')
 
@@ -78,6 +80,21 @@ def helm_invoke(*args):
     return invoke(*([HELM] + list(args)))
 
 
+def release_name(dpl_id):
+    """
+    Get Helm release name from deployment ID.
+
+    :param dpl_id: deployment ID
+    :returns: release name
+
+    """
+    if PREFIX == '':
+        release = dpl_id
+    else:
+        release = PREFIX + '-' + dpl_id
+    return release
+
+
 def delete_helm(txn, dpl_id):
     """
     Delete a Helm deployment.
@@ -88,7 +105,8 @@ def delete_helm(txn, dpl_id):
     """
     # Try to delete
     try:
-        helm_invoke('uninstall', dpl_id, '-n', NAMESPACE)
+        release = release_name(dpl_id)
+        helm_invoke('uninstall', release, '-n', NAMESPACE)
         return True
     except subprocess.CalledProcessError:
         return False # Assume it was already gone
@@ -113,7 +131,8 @@ def create_helm(txn, dpl_id, deploy):
         chart = CHART_REPO_NAME + '/' + chart
 
     # Build command line
-    cmd = ['install', dpl_id, chart, '-n', NAMESPACE]
+    release = release_name(dpl_id)
+    cmd = ['install', release, chart, '-n', NAMESPACE]
 
     # Encode any parameters
     if 'values' in deploy.args and isinstance(deploy.args, dict):
@@ -132,7 +151,7 @@ def create_helm(txn, dpl_id, deploy):
         if "already exists" in e.stdout.decode():
             try:
                 log.info("Purging deployment {}...".format(dpl_id))
-                helm_invoke('uninstall', dpl_id, '-n', NAMESPACE)
+                helm_invoke('uninstall', release, '-n', NAMESPACE)
                 txn.loop()  # Force loop, this will cause a re-attempt
             except subprocess.CalledProcessError:
                 log.error("Could not purge deployment {}!".format(dpl_id))
@@ -148,6 +167,31 @@ def update_helm():
         helm_invoke("repo", "update")
     except subprocess.CalledProcessError as e:
         log.error("Could not refresh chart repositories")
+
+
+def list_helm():
+    """
+    List Helm deployments.
+
+    :returns: set of deployment IDs
+
+    """
+    log.info('Helm release prefix: %s', PREFIX)
+    # Query helm for chart releases
+    releases = helm_invoke('list', '-q', '-n', NAMESPACE).splitlines()
+    # Regular expression to match deployment IDs in release names
+    if PREFIX == '':
+        re_release = re.compile('^(?P<dpl_id>.+)$')
+    else:
+        re_release = re.compile('^{}-(?P<dpl_id>.+)$'.format(PREFIX))
+    # Filter releases for those matching deployments
+    deploys = []
+    for release in releases:
+        match = re_release.match(release)
+        if match is not None:
+            dpl_id = match.group('dpl_id')
+            deploys.append(dpl_id)
+    return set(deploys)
 
 
 def _get_deployment(txn, dpl_id):
@@ -181,9 +225,8 @@ def main(backend='etcd3'):
     # Show
     log.info("Loading helm deployments...")
 
-    # Query helm for active deployments. Filter for active ones.
-    deploys = helm_invoke('list', '-q', '-n', NAMESPACE).split('\n')
-    deploys = set(deploys).difference(set(['']))
+    # Query helm for active deployments
+    deploys = list_helm()
     log.info("Found {} existing deployments.".format(len(deploys)))
 
     # Wait for something to happen

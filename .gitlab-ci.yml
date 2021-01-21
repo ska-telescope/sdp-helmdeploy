@@ -8,14 +8,13 @@ workflow:
 
 stages:
   - test
-  - lint
   - build
   - publish
 
 image: python:latest
 
 # ============================================================================
-# Test and lint Python package
+# Test and lint Python package and build documentation
 # ============================================================================
 
 test:
@@ -34,9 +33,7 @@ test:
     when: always
 
 lint:
-  stage: lint
-  dependencies:
-    - test
+  stage: test
   before_script:
     - pip3 install -r requirements.txt -r requirements-test.txt
   script:
@@ -48,6 +45,19 @@ lint:
   artifacts:
     paths:
       - build
+    expire_in: 1 week
+    when: always
+
+docs:
+  stage: test
+  before_script:
+    - pip3 install -r docs/requirements.txt
+  script:
+    - cd docs
+    - make html
+  artifacts:
+    paths:
+      - docs/build/html
     expire_in: 1 week
     when: always
 
