@@ -88,7 +88,7 @@ def release_name(dpl_id):
     :returns: release name
 
     """
-    if PREFIX is '':
+    if PREFIX == '':
         release = dpl_id
     else:
         release = PREFIX + '-' + dpl_id
@@ -178,9 +178,9 @@ def list_helm():
     """
     log.info('Helm release prefix: %s', PREFIX)
     # Query helm for chart releases
-    releases = helm_invoke('list', '-q', '-n', NAMESPACE).split('\n')
+    releases = helm_invoke('list', '-q', '-n', NAMESPACE).splitlines()
     # Regular expression to match deployment IDs in release names
-    if PREFIX is '':
+    if PREFIX == '':
         re_release = re.compile('^(?P<dpl_id>.+)$')
     else:
         re_release = re.compile('^{}-(?P<dpl_id>.+)$'.format(PREFIX))

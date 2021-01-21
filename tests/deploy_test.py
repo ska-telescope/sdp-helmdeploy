@@ -6,8 +6,6 @@ from ska_sdp_config import Config, Deployment
 
 
 deploy.HELM = '/bin/helm'
-deploy.GIT = '/bin/git'
-
 
 @patch('subprocess.run')
 def test_invoke(mock_run):
@@ -62,6 +60,30 @@ def test_create(mock_run):
     assert mock_run.call_count == 3
     assert not run_create(mock_run, config, byte_string=b"doesn't exist")
     assert mock_run.call_count == 4
+
+
+@patch('ska_sdp_helmdeploy.invoke')
+def test_list(mock_run):
+    deployments = ['test1', 'test2', 'test3']
+    # With prefix
+    deploy.PREFIX = 'test'
+    releases = ['test-' + d for d in deployments]
+    mock_run.return_value = '\n'.join(releases)
+    assert deploy.list_helm() == set(deployments)
+    # No prefix (default)
+    deploy.PREFIX = ''
+    releases = deployments
+    mock_run.return_value = '\n'.join(releases)
+    assert deploy.list_helm() == set(deployments)
+
+
+def test_release_name():
+    # With prefix
+    deploy.PREFIX = 'test'
+    assert deploy.release_name('test') == 'test-test'
+    # No prefix (default)
+    deploy.PREFIX = ''
+    assert deploy.release_name('test') == 'test'
 
 
 @patch('subprocess.run')
