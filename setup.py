@@ -17,7 +17,7 @@ setuptools.setup(
     license="License :: OSI Approved :: BSD License",
     long_description=LONG_DESCRIPTION,
     long_description_content_type="text/markdown",
-    url="https://gitlab.com/ska-telescope/sdp-helmdeploy/",
+    url="https://gitlab.com/ska-telescope/sdp/ska-sdp-helmdeploy/",
     package_dir={"": "src"},
     py_modules=["ska_sdp_helmdeploy"],
     install_requires=["python-dotenv", "ska-sdp-config>=0.0.9", "ska-logging>=0.3"],
