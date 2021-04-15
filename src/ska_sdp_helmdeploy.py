@@ -15,6 +15,7 @@ import subprocess
 import sys
 import time
 import re
+import yaml
 
 import ska_sdp_config
 from ska.logging import configure_logging
@@ -95,6 +96,17 @@ def release_name(dpl_id):
     return release
 
 
+def values_file(dpl_id):
+    """
+    Get name of values file from deployment ID.
+
+    :param dpl_id: deployment ID
+    :returns: name of values file
+
+    """
+    return dpl_id + ".yaml"
+
+
 def delete_helm(txn, dpl_id):
     """
     Delete a Helm deployment.
@@ -103,6 +115,11 @@ def delete_helm(txn, dpl_id):
     :param dpl_id: deployment ID
 
     """
+    # Delete values file if it exists
+    val_file = values_file(dpl_id)
+    if os.path.exists(val_file):
+        os.remove(val_file)
+
     # Try to delete
     try:
         release = release_name(dpl_id)
@@ -136,10 +153,10 @@ def create_helm(txn, dpl_id, deploy):
 
     # Encode any parameters
     if "values" in deploy.args and isinstance(deploy.args, dict):
-        val_str = ",".join(
-            ["{}={}".format(k, v) for k, v in deploy.args["values"].items()]
-        )
-        cmd.extend(["--set", val_str])
+        val_file = values_file(dpl_id)
+        with open(val_file, "w") as f:
+            yaml.dump(deploy.args["values"], f)
+        cmd.extend(["-f", val_file])
 
     # Make the call
     try:

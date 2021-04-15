@@ -20,7 +20,12 @@ setuptools.setup(
     url="https://gitlab.com/ska-telescope/sdp/ska-sdp-helmdeploy/",
     package_dir={"": "src"},
     py_modules=["ska_sdp_helmdeploy"],
-    install_requires=["python-dotenv", "ska-sdp-config>=0.0.9", "ska-logging>=0.3"],
+    install_requires=[
+        "python-dotenv",
+        "pyyaml",
+        "ska-sdp-config>=0.0.9",
+        "ska-logging>=0.3",
+    ],
     setup_requires=["pytest-runner"],
     tests_require=["pylint2junit", "pytest", "pytest-cov", "pytest-pylint"],
     zip_safe=False,

@@ -1,5 +1,6 @@
 --index-url https://nexus.engageska-portugal.pt/repository/pypi/simple
 --extra-index-url https://pypi.org/simple
 python-dotenv
+pyyaml
 ska-sdp-config >= 0.0.9
 ska-logging >= 0.3
