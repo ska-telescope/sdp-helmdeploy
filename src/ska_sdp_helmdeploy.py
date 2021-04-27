@@ -157,7 +157,6 @@ def create_helm(txn, dpl_id, deploy):
 
         # Convert flattened dictionary into nested dictionary
         converted_values = _convert_dict(deploy.args["values"])
-        log.info(converted_values)
         with open(val_file, "w") as f:
             yaml.dump(converted_values, f)
         cmd.extend(["-f", val_file])
