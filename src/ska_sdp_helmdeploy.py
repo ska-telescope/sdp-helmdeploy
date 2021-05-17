@@ -154,11 +154,8 @@ def create_helm(txn, dpl_id, deploy):
     # Encode any parameters
     if "values" in deploy.args and isinstance(deploy.args, dict):
         val_file = values_file(dpl_id)
-
-        # Convert flattened dictionary into nested dictionary
-        converted_values = _convert_dict(deploy.args["values"])
         with open(val_file, "w") as f:
-            yaml.dump(converted_values, f)
+            yaml.dump(deploy.args["values"], f)
         cmd.extend(["-f", val_file])
 
     # Make the call
@@ -221,31 +218,6 @@ def _get_deployment(txn, dpl_id):
     except ValueError as e:
         log.warning("Deployment {} failed validation: {}!".format(dpl_id, str(e)))
     return None
-
-
-def _convert_dict(parameters):
-    """Convert flatten dictionary to nested dictionary.
-    :param parameters: parameters that needs to be converted
-    """
-
-    result = {}
-    for keys, values in parameters.items():
-        _split_rec(keys, values, result)
-    return result
-
-
-def _split_rec(keys, values, out):
-    """Splitting keys in dictionary using recursive approach.
-
-    :param keys: keys from the dictionary
-    :param values: values from the dictionary
-    :param out: output result
-    """
-    keys, *rest = keys.split(".", 1)
-    if rest:
-        _split_rec(rest[0], values, out.setdefault(keys, {}))
-    else:
-        out[keys] = values
 
 
 def main(backend="etcd3"):
