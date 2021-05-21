@@ -1,7 +1,7 @@
 import subprocess
 from unittest.mock import patch
 
-import ska_sdp_helmdeploy as deploy
+import ska_sdp_helmdeploy.helmdeploy as deploy
 from ska_sdp_config import Config, Deployment
 
 
@@ -63,18 +63,18 @@ def test_create(mock_run):
     assert mock_run.call_count == 4
 
 
-@patch("ska_sdp_helmdeploy.invoke")
-def test_list(mock_run):
+@patch("ska_sdp_helmdeploy.helmdeploy.invoke")
+def test_list(mock_invoke):
     deployments = ["test1", "test2", "test3"]
     # With prefix
     deploy.PREFIX = "test"
     releases = ["test-" + d for d in deployments]
-    mock_run.return_value = "\n".join(releases)
+    mock_invoke.return_value = "\n".join(releases)
     assert deploy.list_helm() == set(deployments)
     # No prefix (default)
     deploy.PREFIX = ""
     releases = deployments
-    mock_run.return_value = "\n".join(releases)
+    mock_invoke.return_value = "\n".join(releases)
     assert deploy.list_helm() == set(deployments)
 
 

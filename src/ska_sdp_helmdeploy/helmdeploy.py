@@ -220,7 +220,7 @@ def _get_deployment(txn, dpl_id):
     return None
 
 
-def main(backend="etcd3"):
+def main_loop(backend=None):
     """
     Main loop of Helm controller.
 
@@ -288,6 +288,6 @@ def terminate(signal, frame):
     sys.exit(0)
 
 
-if __name__ == "__main__":
+def main(backend=None):
     signal.signal(signal.SIGTERM, terminate)
-    main()
+    main_loop(backend=backend)

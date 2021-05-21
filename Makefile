@@ -1,5 +1,5 @@
 NAME := ska-sdp-helmdeploy
-VERSION := $(shell cat version.txt)
+VERSION := $(patsubst "%",%, $(shell awk -F' = ' '/^__version__ =/{print $$2}' src/ska_sdp_helmdeploy/version.py))
 
 include make/Makefile
 
