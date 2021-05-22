@@ -11,6 +11,7 @@ import signal
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 import yaml
 
@@ -97,17 +98,6 @@ def release_name(dpl_id):
     return release
 
 
-def values_file(dpl_id):
-    """
-    Get name of values file from deployment ID.
-
-    :param dpl_id: deployment ID
-    :returns: name of values file
-
-    """
-    return dpl_id + ".yaml"
-
-
 def delete_helm(dpl_id):
     """
     Delete a Helm deployment.
@@ -116,11 +106,6 @@ def delete_helm(dpl_id):
 
     """
     log.info("Deleting deployment %s...", dpl_id)
-
-    # Delete values file if it exists
-    val_file = values_file(dpl_id)
-    if os.path.exists(val_file):
-        os.remove(val_file)
 
     # Try to delete
     try:
@@ -146,25 +131,40 @@ def create_helm(dpl_id, deploy):
     chart = deploy.args.get("chart")
     if "/" not in chart:
         chart = CHART_REPO_NAME + "/" + chart
+    log.debug("Chart: %s", chart)
 
     # Build command line
     release = release_name(dpl_id)
     cmd = ["install", release, chart, "-n", NAMESPACE]
 
-    # Encode any parameters
-    if "values" in deploy.args and isinstance(deploy.args, dict):
-        val_file = values_file(dpl_id)
-        with open(val_file, "w") as file:
-            yaml.dump(deploy.args["values"], file)
-        cmd.extend(["-f", val_file])
+    # Write any values to a temporary file
+    if "values" in deploy.args:
+        values = yaml.dump(deploy.args["values"])
+        log.debug("Values:")
+        for line in values.splitlines():
+            log.debug("-> %s", line)
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".yaml", delete=False
+        ) as file:
+            file.write(values)
+        filename = file.name
+        cmd.extend(["-f", filename])
+    else:
+        filename = None
 
     # Try to create
     try:
         helm_invoke(*cmd)
-        return True
+        success = True
     except subprocess.CalledProcessError:
         log.error("Could not create deployment %s!", dpl_id)
-        return False
+        success = False
+
+    # Delete values file, if used
+    if filename:
+        os.unlink(filename)
+
+    return success
 
 
 def update_helm():
