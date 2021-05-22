@@ -11,7 +11,7 @@ stages:
   - build
   - publish
 
-image: python:latest
+image: python:3.9-slim
 
 # ============================================================================
 # Test and lint Python package and build documentation
@@ -52,6 +52,7 @@ lint:
 
 docs:
   stage: test
+  image: python:latest
   before_script:
     - pip3 install -r docs/requirements.txt
   script:
@@ -83,7 +84,7 @@ build:
     - make push
 
 # ============================================================================
-# Tag and publish Docker image (master only)
+# Publish Docker image (tag only)
 # ============================================================================
 
 publish:
