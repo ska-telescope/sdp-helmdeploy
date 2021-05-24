@@ -22,6 +22,7 @@ autodoc_mock_imports = [
     "dotenv",
     "ska",
     "ska_sdp_config",
+    "yaml",
 ]
 
 import os
