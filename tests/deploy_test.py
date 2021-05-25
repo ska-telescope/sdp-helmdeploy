@@ -1,34 +1,33 @@
 import subprocess
 from unittest.mock import patch
 
-import ska_sdp_helmdeploy as deploy
 from ska_sdp_config import Config, Deployment
+from ska_sdp_helmdeploy import helmdeploy
 
-
-deploy.HELM = "/bin/helm"
+helmdeploy.HELM = "/bin/helm"
 
 
 @patch("subprocess.run")
 def test_invoke(mock_run):
-    deploy.invoke("ls")
+    helmdeploy.invoke("ls")
     mock_run.assert_called_once()
 
 
 @patch("subprocess.run")
 def test_delete(mock_run):
-    assert deploy.delete_helm("test", "0")
+    assert helmdeploy.delete_helm("test")
     mock_run.assert_called_once()
     mock_run.side_effect = subprocess.CalledProcessError(1, "test")
-    assert not deploy.delete_helm("test", "0")
+    assert not helmdeploy.delete_helm("test")
     assert mock_run.call_count == 2
 
 
 @patch("subprocess.run")
 def test_update(mock_run):
-    deploy.update_helm()
+    helmdeploy.update_helm()
     mock_run.assert_called_once()
     mock_run.side_effect = subprocess.CalledProcessError(1, "test")
-    deploy.update_helm()
+    helmdeploy.update_helm()
     assert mock_run.call_count == 2
 
 
@@ -41,7 +40,8 @@ def run_create(mock_run, config, byte_string=None):
 
     for txn in config.txn():
         deployment = txn.get_deployment("test")
-        ok = deploy.create_helm(txn, "test", deployment)
+    ok = helmdeploy.create_helm("test", deployment)
+
     return ok
 
 
@@ -53,47 +53,48 @@ def test_create(mock_run):
         txn.create_deployment(
             Deployment("test", "helm", {"chart": "test", "values": {"test": "test"}})
         )
-        assert deploy._get_deployment(txn, "test") is not None
+    for txn in config.txn():
+        assert helmdeploy._get_deployment(txn, "test") is not None
 
     assert run_create(mock_run, config)
     mock_run.assert_called_once()
     assert not run_create(mock_run, config, byte_string=b"already exists")
-    assert mock_run.call_count == 3
+    assert mock_run.call_count == 2
     assert not run_create(mock_run, config, byte_string=b"doesn't exist")
-    assert mock_run.call_count == 4
+    assert mock_run.call_count == 3
 
 
-@patch("ska_sdp_helmdeploy.invoke")
-def test_list(mock_run):
+@patch("ska_sdp_helmdeploy.helmdeploy.invoke")
+def test_list(mock_invoke):
     deployments = ["test1", "test2", "test3"]
     # With prefix
-    deploy.PREFIX = "test"
-    releases = ["test-" + d for d in deployments]
-    mock_run.return_value = "\n".join(releases)
-    assert deploy.list_helm() == set(deployments)
+    helmdeploy.PREFIX = "test"
+    releases = ["test-" + d for d in deployments] + ["foo", "bar"]
+    mock_invoke.return_value = "\n".join(releases)
+    assert helmdeploy.list_helm() == deployments
     # No prefix (default)
-    deploy.PREFIX = ""
+    helmdeploy.PREFIX = ""
     releases = deployments
-    mock_run.return_value = "\n".join(releases)
-    assert deploy.list_helm() == set(deployments)
+    mock_invoke.return_value = "\n".join(releases)
+    assert helmdeploy.list_helm() == deployments
 
 
 def test_release_name():
     # With prefix
-    deploy.PREFIX = "test"
-    assert deploy.release_name("test") == "test-test"
+    helmdeploy.PREFIX = "test"
+    assert helmdeploy.release_name("test") == "test-test"
     # No prefix (default)
-    deploy.PREFIX = ""
-    assert deploy.release_name("test") == "test"
+    helmdeploy.PREFIX = ""
+    assert helmdeploy.release_name("test") == "test"
 
 
 @patch("subprocess.run")
 def test_main(mock_run):
-    deploy.main(backend="memory")
+    helmdeploy.main(backend="memory")
     assert mock_run.call_count > 0
 
 
 @patch("signal.signal")
 @patch("sys.exit")
 def test_terminate(mock_exit, mock_signal):
-    deploy.terminate(None, None)
+    helmdeploy.terminate(None, None)

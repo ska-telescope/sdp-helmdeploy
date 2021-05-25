@@ -5,16 +5,14 @@ Installs/updates/uninstalls Helm releases depending on information in the SDP
 configuration.
 """
 
-# pylint: disable=C0103
-
 import logging
 import os
 import signal
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
-import re
 import yaml
 
 import ska_sdp_config
@@ -59,13 +57,17 @@ def invoke(*cmd_line):
     # Perform call
     log.debug(" ".join(["$"] + list(cmd_line)))
     result = subprocess.run(
-        cmd_line, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=HELM_TIMEOUT
+        cmd_line,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        timeout=HELM_TIMEOUT,
+        check=True,
     )
     # Log results
-    log.debug("Code: {}".format(result.returncode))
+    log.debug("Code: %s", result.returncode)
     out = result.stdout.decode()
     for line in out.splitlines():
-        log.debug("-> " + line)
+        log.debug("-> %s", line)
     result.check_returncode()
     return out
 
@@ -89,36 +91,21 @@ def release_name(dpl_id):
     :returns: release name
 
     """
-    if PREFIX == "":
-        release = dpl_id
-    else:
+    if PREFIX:
         release = PREFIX + "-" + dpl_id
+    else:
+        release = dpl_id
     return release
 
 
-def values_file(dpl_id):
-    """
-    Get name of values file from deployment ID.
-
-    :param dpl_id: deployment ID
-    :returns: name of values file
-
-    """
-    return dpl_id + ".yaml"
-
-
-def delete_helm(txn, dpl_id):
+def delete_helm(dpl_id):
     """
     Delete a Helm deployment.
 
-    :param txn: config DB transaction
     :param dpl_id: deployment ID
 
     """
-    # Delete values file if it exists
-    val_file = values_file(dpl_id)
-    if os.path.exists(val_file):
-        os.remove(val_file)
+    log.info("Deleting deployment %s...", dpl_id)
 
     # Try to delete
     try:
@@ -129,61 +116,62 @@ def delete_helm(txn, dpl_id):
         return False  # Assume it was already gone
 
 
-def create_helm(txn, dpl_id, deploy):
+def create_helm(dpl_id, deploy):
     """
     Create a new Helm deployment.
 
-    :param txn: config DB transaction
     :param dpl_id: deployment ID
     :param deploy: the deployment
 
     """
-    # Attempt install
-    log.info("Creating deployment {}...".format(dpl_id))
+    log.info("Creating deployment %s...", dpl_id)
 
     # Get chart name. If it does not contain '/', it is from the private
     # repository
     chart = deploy.args.get("chart")
     if "/" not in chart:
         chart = CHART_REPO_NAME + "/" + chart
+    log.debug("Chart: %s", chart)
 
     # Build command line
     release = release_name(dpl_id)
     cmd = ["install", release, chart, "-n", NAMESPACE]
 
-    # Encode any parameters
-    if "values" in deploy.args and isinstance(deploy.args, dict):
-        val_file = values_file(dpl_id)
-        with open(val_file, "w") as f:
-            yaml.dump(deploy.args["values"], f)
-        cmd.extend(["-f", val_file])
+    # Write any values to a temporary file
+    if "values" in deploy.args:
+        values = yaml.dump(deploy.args["values"])
+        log.debug("Values:")
+        for line in values.splitlines():
+            log.debug("-> %s", line)
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".yaml", delete=False
+        ) as file:
+            file.write(values)
+        filename = file.name
+        cmd.extend(["-f", filename])
+    else:
+        filename = None
 
-    # Make the call
+    # Try to create
     try:
         helm_invoke(*cmd)
-        return True
+        success = True
+    except subprocess.CalledProcessError:
+        log.error("Could not create deployment %s!", dpl_id)
+        success = False
 
-    except subprocess.CalledProcessError as e:
+    # Delete values file, if used
+    if filename:
+        os.unlink(filename)
 
-        # Already exists? Purge
-        if "already exists" in e.stdout.decode():
-            try:
-                log.info("Purging deployment {}...".format(dpl_id))
-                helm_invoke("uninstall", release, "-n", NAMESPACE)
-                txn.loop()  # Force loop, this will cause a re-attempt
-            except subprocess.CalledProcessError:
-                log.error("Could not purge deployment {}!".format(dpl_id))
-        else:
-            log.error("Could not create deployment {}!".format(dpl_id))
-
-    return False
+    return success
 
 
 def update_helm():
     """Refresh Helm chart repositories."""
     try:
         helm_invoke("repo", "update")
-    except subprocess.CalledProcessError as e:
+    except subprocess.CalledProcessError:
         log.error("Could not refresh chart repositories")
 
 
@@ -191,36 +179,32 @@ def list_helm():
     """
     List Helm deployments.
 
-    :returns: set of deployment IDs
+    :returns: list of deployment IDs
 
     """
-    log.info("Helm release prefix: %s", PREFIX)
     # Query helm for chart releases
     releases = helm_invoke("list", "-q", "-n", NAMESPACE).splitlines()
-    # Regular expression to match deployment IDs in release names
-    if PREFIX == "":
-        re_release = re.compile("^(?P<dpl_id>.+)$")
+    if PREFIX:
+        # Filter releases for those matching deployments
+        deploys = [
+            release[len(PREFIX) + 1 :]
+            for release in releases
+            if release.startswith(PREFIX + "-")
+        ]
     else:
-        re_release = re.compile("^{}-(?P<dpl_id>.+)$".format(PREFIX))
-    # Filter releases for those matching deployments
-    deploys = []
-    for release in releases:
-        match = re_release.match(release)
-        if match is not None:
-            dpl_id = match.group("dpl_id")
-            deploys.append(dpl_id)
-    return set(deploys)
+        deploys = releases
+    return deploys
 
 
 def _get_deployment(txn, dpl_id):
     try:
         return txn.get_deployment(dpl_id)
-    except ValueError as e:
-        log.warning("Deployment {} failed validation: {}!".format(dpl_id, str(e)))
+    except ValueError as error:
+        log.warning("Deployment %s failed validation: %s!", dpl_id, str(error))
     return None
 
 
-def main(backend="etcd3"):
+def main_loop(backend=None):
     """
     Main loop of Helm controller.
 
@@ -230,64 +214,53 @@ def main(backend="etcd3"):
     # Instantiate configuration
     client = ska_sdp_config.Config(backend=backend)
 
-    # TODO: Service lease + leader election
-
-    # Load Helm repositories
+    # Configure Helm repositories
     for name, url in CHART_REPO_LIST:
         helm_invoke("repo", "add", name, url)
-    update_helm()
 
+    # Get charts
+    update_helm()
     next_chart_refresh = time.time() + CHART_REPO_REFRESH
 
-    # Show
-    log.info("Loading helm deployments...")
-
-    # Query helm for active deployments
-    deploys = list_helm()
-    log.info("Found {} existing deployments.".format(len(deploys)))
-
     # Wait for something to happen
-    for txn in client.txn():
+    for watcher in client.watcher(timeout=CHART_REPO_REFRESH):
 
         # Refresh charts?
         if time.time() > next_chart_refresh:
-            next_chart_refresh = time.time() + CHART_REPO_REFRESH
             update_helm()
+            next_chart_refresh = time.time() + CHART_REPO_REFRESH
 
         # List deployments
-        target_deploys = txn.list_deployments()
+        deploys = list_helm()
+        for txn in watcher.txn():
+            target_deploys = txn.list_deployments()
 
-        # Check for deployments that we should delete
-        for dpl_id in list(deploys):
+        # Check for deployments we should delete
+        for dpl_id in deploys:
             if dpl_id not in target_deploys:
-                if delete_helm(txn, dpl_id):
-                    deploys.remove(dpl_id)
+                # Delete it
+                delete_helm(dpl_id)
 
         # Check for deployments we should add
         for dpl_id in target_deploys:
             if dpl_id not in deploys:
-
                 # Get details
-                deploy = _get_deployment(txn, dpl_id)
-
-                # Right type?
+                for txn in watcher.txn():
+                    deploy = _get_deployment(txn, dpl_id)
+                # If vanished or wrong type, ignore
                 if deploy is None or deploy.type != "helm":
                     continue
-
                 # Create it
-                if create_helm(txn, dpl_id, deploy):
-                    deploys.add(dpl_id)
-
-        # Loop around, wait if we made no change
-        txn.loop(wait=True, timeout=next_chart_refresh - time.time())
+                create_helm(dpl_id, deploy)
 
 
-def terminate(signal, frame):
+def terminate(_signame, _frame):
     """Terminate the program."""
     log.info("Asked to terminate")
     sys.exit(0)
 
 
-if __name__ == "__main__":
+def main(backend=None):
+    """Main."""
     signal.signal(signal.SIGTERM, terminate)
-    main()
+    main_loop(backend=backend)

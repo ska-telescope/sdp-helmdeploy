@@ -4,14 +4,16 @@
 
 import setuptools
 
-with open("version.txt", "r") as fh:
-    VERSION = fh.read().rstrip()
+VERSION = {}
+with open("src/ska_sdp_helmdeploy/version.py", "r") as fh:
+    exec(fh.read(), VERSION)
+
 with open("README.md", "r") as fh:
     LONG_DESCRIPTION = fh.read()
 
 setuptools.setup(
     name="ska-sdp-helmdeploy",
-    version=VERSION,
+    version=VERSION["__version__"],
     description="Helm deployment controller",
     author="SKA Sim Team",
     license="License :: OSI Approved :: BSD License",
@@ -19,7 +21,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://gitlab.com/ska-telescope/sdp/ska-sdp-helmdeploy/",
     package_dir={"": "src"},
-    py_modules=["ska_sdp_helmdeploy"],
+    packages=setuptools.find_packages("src"),
     install_requires=[
         "python-dotenv",
         "pyyaml",

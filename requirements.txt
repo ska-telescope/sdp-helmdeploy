@@ -4,4 +4,3 @@ python-dotenv
 pyyaml
 ska-sdp-config >= 0.0.9
 ska-logging >= 0.3
-bumpver
