@@ -14,6 +14,8 @@ import sys
 import tempfile
 import time
 import yaml
+import threading
+from .monitor_daemon import monitor_workflows
 
 import ska_sdp_config
 from ska.logging import configure_logging
@@ -221,6 +223,10 @@ def main_loop(backend=None):
     # Get charts
     update_helm()
     next_chart_refresh = time.time() + CHART_REPO_REFRESH
+    
+    # Start thread to monitor Kubernetes events in the Helm Namespace
+    t = threading.Thread(target=monitor_workflows, daemon=True) 
+    t.start()
 
     # Wait for something to happen
     for watcher in client.watcher(timeout=CHART_REPO_REFRESH):
@@ -264,3 +270,8 @@ def main(backend=None):
     """Main."""
     signal.signal(signal.SIGTERM, terminate)
     main_loop(backend=backend)
+
+# Replaced __main__.py with this construct to simplify testing.
+if __name__ == "__main__":
+    main()
+
