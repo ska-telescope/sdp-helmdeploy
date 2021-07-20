@@ -226,8 +226,8 @@ def main_loop(backend=None):
     next_chart_refresh = time.time() + CHART_REPO_REFRESH
 
     # Start thread to monitor Kubernetes events in the Helm Namespace
-    t = threading.Thread(target=monitor_workflows, daemon=True) 
-    t.start()
+    monitor_thread = threading.Thread(target=monitor_workflows, daemon=True)
+    monitor_thread.start()
 
     # Wait for something to happen
     for watcher in client.watcher(timeout=CHART_REPO_REFRESH):
@@ -275,4 +275,3 @@ def main(backend=None):
 # Replaced __main__.py with this construct to simplify testing.
 if __name__ == "__main__":
     main()
-

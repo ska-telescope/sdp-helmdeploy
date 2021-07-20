@@ -45,7 +45,7 @@ def monitor_workflows():
         except Exception:
            pass 
         status= {"k8s_status": pod.status.phase,"k8s_lastlog":logstr.split("\n")[-4:-1]}
-        LOG.info("POD status %s, status)
+        LOG.info("POD status %s", status)
         if state != None:
            state.update(status)
            for txn in sdp_config.txn():
