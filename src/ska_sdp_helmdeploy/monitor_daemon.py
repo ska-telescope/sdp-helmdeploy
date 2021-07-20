@@ -6,7 +6,7 @@ data back to the Processing Block status in the Configuration Database
 """
 import os
 import logging
-from kubernetes import client, config, watch, config.ConfigException
+from kubernetes import client, config, watch
 import ska_sdp_config
 
 LOG_LEVEL = os.getenv("SDP_LOG_LEVEL", "DEBUG")
