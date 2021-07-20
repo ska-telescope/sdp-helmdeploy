@@ -13,13 +13,14 @@ import subprocess
 import sys
 import tempfile
 import time
-import yaml
 import threading
-from .monitor_daemon import monitor_workflows
+import yaml
 
 import ska_sdp_config
 from ska.logging import configure_logging
 from dotenv import load_dotenv
+
+from .monitor_daemon import monitor_workflows
 
 load_dotenv()
 
@@ -223,7 +224,7 @@ def main_loop(backend=None):
     # Get charts
     update_helm()
     next_chart_refresh = time.time() + CHART_REPO_REFRESH
-    
+
     # Start thread to monitor Kubernetes events in the Helm Namespace
     t = threading.Thread(target=monitor_workflows, daemon=True) 
     t.start()
