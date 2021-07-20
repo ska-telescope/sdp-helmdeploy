@@ -30,8 +30,8 @@ def monitor_workflows():
     Configuration Database
     """
 
-    v1 = client.CoreV1Api()
-    for event in watch.stream(v1.list_namespaced_pod, namespace=NAMESPACE):
+    api_v1 = client.CoreV1Api()
+    for event in watch.stream(api_v1.list_namespaced_pod, namespace=NAMESPACE):
         pod = event['object']
         LOG.info("Workflow POD name %s in phase %s", pod.metadata.name, pod.status.phase)
         index = (pod.metadata.name).index('-workflow')
@@ -39,15 +39,14 @@ def monitor_workflows():
 
         for txn in sdp_config.txn():
             state = txn.get_processing_block_state(pb_id)
-      
+    
         try:
-           logstr = v1.read_namespaced_pod_log(pod.metadata.name, "sdp", pretty='true')
+            logstr = api_v1.read_namespaced_pod_log(pod.metadata.name, "sdp", pretty='true')
         except Exception:
-           pass 
+            pass 
         status= {"k8s_status": pod.status.phase,"k8s_lastlog":logstr.split("\n")[-4:-1]}
         LOG.info("POD status %s", status)
         if state != None:
            state.update(status)
            for txn in sdp_config.txn():
-              txn.update_processing_block_state(pb_id, state)
-
+               txn.update_processing_block_state(pb_id, state)
