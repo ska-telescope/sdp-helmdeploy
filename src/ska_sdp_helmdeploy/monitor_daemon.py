@@ -6,7 +6,7 @@ data back to the Processing Block status in the Configuration Database
 """
 import os
 import logging
-from kubernetes import client, config, watch
+from kubernetes import client, config, watch, config.ConfigException
 import ska_sdp_config
 
 LOG_LEVEL = os.getenv("SDP_LOG_LEVEL", "DEBUG")
@@ -15,9 +15,9 @@ LOG = logging.getLogger(__name__)
 
 # Configs can be set in Configuration class directly or using helper utility
 try:
-   config.load_kube_config()
-except ConfigException:
-   config.load_incluster_config()
+    config.load_kube_config()
+except config.ConfigException:
+    config.load_incluster_config()
 watch = watch.Watch()
 
 # Connect to config DB
@@ -40,7 +40,7 @@ def monitor_workflows():
 
         for txn in sdp_config.txn():
             state = txn.get_processing_block_state(pb_id)
-    
+
         try:
             logstr = api_v1.read_namespaced_pod_log(pod.metadata.name, "sdp", pretty='true')
         except Exception:
