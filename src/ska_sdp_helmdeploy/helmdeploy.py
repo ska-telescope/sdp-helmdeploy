@@ -20,8 +20,6 @@ import ska_sdp_config
 from ska.logging import configure_logging
 from dotenv import load_dotenv
 
-from monitor_daemon import monitor_workflows
-
 load_dotenv()
 
 # Load environment
@@ -230,9 +228,8 @@ def main_loop(backend=None):
     if f is None:
         f = os.getenv("HOME") + "/.kube/config"
     for file in [f, "/var/run/secrets/kubernetes.io"]:
-        if(os.path.isfile(file)):
-            monitor_thread = threading.Thread(target=monitor_workflows,
-                daemon=True)
+        if os.path.isfile(file):
+            monitor_thread = threading.Thread(target=monitor_workflows, daemon=True)
             monitor_thread.start()
 
     # Wait for something to happen

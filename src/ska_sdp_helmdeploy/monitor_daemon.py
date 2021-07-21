@@ -5,7 +5,6 @@ Uses the Python Kubernetes API to monitor Workflows POD status and then transfer
 data back to the Processing Block status in the Configuration Database
 """
 import os
-import sys
 import logging
 from kubernetes import client, config, watch
 import ska_sdp_config
@@ -17,12 +16,12 @@ LOG = logging.getLogger(__name__)
 # Configs can be set in Configuration class directly or using helper utility
 file = os.getenv("KUBECONFIG")
 if file is None:
-        file = os.getenv("HOME") + "/.kube/config"
-if(os.path.isfile(file)):
+    file = os.getenv("HOME") + "/.kube/config"
+if os.path.isfile(file):
     config.load_kube_config()
-if(os.path.isfile("/var/run/secrets/kubernetes.io")):
+if os.path.isfile("/var/run/secrets/kubernetes.io"):
     config.load_incluster_config()
-    
+
 watch = watch.Watch()
 
 # Connect to config DB
