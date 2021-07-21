@@ -272,6 +272,7 @@ def main(backend=None):
     signal.signal(signal.SIGTERM, terminate)
     main_loop(backend=backend)
 
+
 # Replaced __main__.py with this construct to simplify testing.
 if __name__ == "__main__":
     main()

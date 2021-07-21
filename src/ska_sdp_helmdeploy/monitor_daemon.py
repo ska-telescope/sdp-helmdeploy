@@ -25,6 +25,7 @@ LOG.info("Connecting to config DB")
 sdp_config = ska_sdp_config.Config(backend=None)
 NAMESPACE = os.getenv("SDP_HELM_NAMESPACE", "sdp")
 
+
 def monitor_workflows():
     """
     Daemon Thread to monitor deployed Workflows and to copy appropriate data back to the
@@ -33,18 +34,25 @@ def monitor_workflows():
 
     api_v1 = client.CoreV1Api()
     for event in watch.stream(api_v1.list_namespaced_pod, namespace=NAMESPACE):
-        pod = event['object']
-        LOG.info("Workflow POD name %s in phase %s", pod.metadata.name, pod.status.phase)
-        index = (pod.metadata.name).index('-workflow')
+        pod = event["object"]
+        LOG.info(
+            "Workflow POD name %s in phase %s", pod.metadata.name, pod.status.phase
+        )
+        index = (pod.metadata.name).index("-workflow")
         pb_id = pod.metadata.name[5:index]
 
         for txn in sdp_config.txn():
             state = txn.get_processing_block_state(pb_id)
             try:
-                logstr = api_v1.read_namespaced_pod_log(pod.metadata.name, NAMESPACE, pretty='true')
+                logstr = api_v1.read_namespaced_pod_log(
+                    pod.metadata.name, NAMESPACE, pretty="true"
+                )
             except client.exceptions.ApiException:
-                logstr=""
-        status= {"k8s_status": pod.status.phase,"k8s_lastlog":logstr.split("\n")[-4:-1]}
+                logstr = ""
+        status = {
+            "k8s_status": pod.status.phase,
+            "k8s_lastlog": logstr.split("\n")[-4:-1],
+        }
         LOG.info("POD status %s", status)
         if state is not None:
             state.update(status)
