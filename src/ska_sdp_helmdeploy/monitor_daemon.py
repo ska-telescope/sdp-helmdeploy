@@ -20,7 +20,7 @@ except config.ConfigException:
     try:
         config.load_incluster_config()
     except config.ConfigException:
-        LOG.error("Cannot connect to Kubernetes!)
+        LOG.error("Cannot connect to Kubernetes! Thread exiting")
         exit(0)
     
 watch = watch.Watch()
