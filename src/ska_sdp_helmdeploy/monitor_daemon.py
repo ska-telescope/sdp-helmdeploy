@@ -5,6 +5,7 @@ Uses the Python Kubernetes API to monitor Workflows POD status and then transfer
 data back to the Processing Block status in the Configuration Database
 """
 import os
+import sys
 import logging
 from kubernetes import client, config, watch
 import ska_sdp_config
