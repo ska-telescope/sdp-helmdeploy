@@ -15,14 +15,13 @@ LOG_LEVEL = os.getenv("SDP_LOG_LEVEL", "DEBUG")
 LOG = logging.getLogger(__name__)
 
 # Configs can be set in Configuration class directly or using helper utility
-try:
+file = os.getenv("KUBECONFIG")
+if file is None:
+        file = os.getenv("HOME") + "/.kube/config"
+if(os.path.isfile(file)):
     config.load_kube_config()
-except config.ConfigException:
-    try:
-        config.load_incluster_config()
-    except config.ConfigException:
-        LOG.error("Cannot connect to Kubernetes! Thread exiting")
-        sys.exit()
+if(os.path.isfile("/var/run/secrets/kubernetes.io")):
+    config.load_incluster_config()
     
 watch = watch.Watch()
 
