@@ -20,8 +20,8 @@
 
 autodoc_mock_imports = [
     "dotenv",
-    "ska",
     "ska_sdp_config",
+    "ska_ser_logging",
     "yaml",
 ]
 
@@ -41,7 +41,7 @@ def setup(app):
 
 # -- Project information -----------------------------------------------------
 project = "SDP Helm Deployer"
-copyright = "2019-2020, SKA SDP Developers"
+copyright = "2019-2021, SKA SDP Developers"
 author = "SKA SDP Developers"
 
 
@@ -73,7 +73,6 @@ extensions = [
     "sphinx.ext.ifconfig",
     "sphinx.ext.viewcode",
     "sphinx.ext.githubpages",
-    "m2r2",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
