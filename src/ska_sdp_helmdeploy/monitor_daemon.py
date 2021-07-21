@@ -17,7 +17,12 @@ LOG = logging.getLogger(__name__)
 try:
     config.load_kube_config()
 except config.ConfigException:
-    config.load_incluster_config()
+    try:
+        config.load_incluster_config()
+    except config.ConfigException:
+        LOG.error("Cannot connect to Kubernetes!)
+        exit(0)
+    
 watch = watch.Watch()
 
 # Connect to config DB
