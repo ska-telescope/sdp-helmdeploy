@@ -40,11 +40,10 @@ def monitor_workflows():
 
         for txn in sdp_config.txn():
             state = txn.get_processing_block_state(pb_id)
-
-        try:
-            logstr = api_v1.read_namespaced_pod_log(pod.metadata.name, "sdp", pretty='true')
-        except Exception:
-            pass 
+            try:
+                logstr = api_v1.read_namespaced_pod_log(pod.metadata.name, NAMESPACE, pretty='true')
+            except client.exceptions.ApiException:
+                logstr=""
         status= {"k8s_status": pod.status.phase,"k8s_lastlog":logstr.split("\n")[-4:-1]}
         LOG.info("POD status %s", status)
         if state is not None:
