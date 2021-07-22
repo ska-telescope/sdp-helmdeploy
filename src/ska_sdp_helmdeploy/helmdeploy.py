@@ -20,6 +20,8 @@ import ska_sdp_config
 from ska_ser_logging import configure_logging
 from dotenv import load_dotenv
 
+from monitor_daemon import monitor_workflows
+
 load_dotenv()
 
 # Load environment
@@ -224,13 +226,14 @@ def main_loop(backend=None):
     next_chart_refresh = time.time() + CHART_REPO_REFRESH
 
     # Start thread to monitor Kubernetes events in the Helm Namespace
-    f = os.getenv("KUBECONFIG")
-    if f is None:
-        f = os.getenv("HOME") + "/.kube/config"
-    for file in [f, "/var/run/secrets/kubernetes.io"]:
+    kube_config = os.getenv("KUBECONFIG")
+    if kube_config is None:
+        kube_config = os.getenv("HOME") + "/.kube/config"
+    for file in [kube_config, "/var/run/secrets/kubernetes.io"]:
         if os.path.isfile(file):
-            monitor_thread = threading.Thread(target=monitor_workflows, 
-                             args=(client), daemon=True)
+            monitor_thread = threading.Thread(
+                target=monitor_workflows, args=(client,), daemon=True
+            )
             monitor_thread.start()
 
     # Wait for something to happen
