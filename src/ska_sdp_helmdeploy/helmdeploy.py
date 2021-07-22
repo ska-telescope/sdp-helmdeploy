@@ -20,8 +20,6 @@ import ska_sdp_config
 from ska_ser_logging import configure_logging
 from dotenv import load_dotenv
 
-from monitor_daemon import monitor_workflows
-
 load_dotenv()
 
 # Load environment
