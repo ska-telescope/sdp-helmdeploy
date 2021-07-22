@@ -229,7 +229,8 @@ def main_loop(backend=None):
         f = os.getenv("HOME") + "/.kube/config"
     for file in [f, "/var/run/secrets/kubernetes.io"]:
         if os.path.isfile(file):
-            monitor_thread = threading.Thread(target=monitor_workflows, daemon=True)
+            monitor_thread = threading.Thread(target=monitor_workflows, 
+                             args=(client), daemon=True)
             monitor_thread.start()
 
     # Wait for something to happen

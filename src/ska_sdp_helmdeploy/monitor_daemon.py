@@ -7,9 +7,6 @@ data back to the Processing Block status in the Configuration Database
 import os
 import logging
 from kubernetes import client, config, watch
-import ska_sdp_config
-
-LOG_LEVEL = os.getenv("SDP_LOG_LEVEL", "DEBUG")
 
 LOG = logging.getLogger(__name__)
 
@@ -24,13 +21,10 @@ if os.path.isfile("/var/run/secrets/kubernetes.io"):
 
 watch = watch.Watch()
 
-# Connect to config DB
-LOG.info("Connecting to config DB")
-sdp_config = ska_sdp_config.Config(backend=None)
 NAMESPACE = os.getenv("SDP_HELM_NAMESPACE", "sdp")
 
 
-def monitor_workflows():
+def monitor_workflows(sdp_config):
     """
     Daemon Thread to monitor deployed Workflows and to copy appropriate data back to the
     Configuration Database
