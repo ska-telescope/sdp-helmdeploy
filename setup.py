@@ -25,11 +25,14 @@ setuptools.setup(
     install_requires=[
         "python-dotenv",
         "pyyaml",
-        "ska-sdp-config>=0.0.9",
-        "ska-logging>=0.3",
+        "ska-sdp-config",
+        "ska-ser-logging",
     ],
     setup_requires=["pytest-runner"],
-    tests_require=["pylint2junit", "pytest", "pytest-cov", "pytest-pylint"],
+    tests_require=[
+        "pytest",
+        "pytest-cov",
+    ],
     zip_safe=False,
     classifiers=[
         "Development Status :: 3 - Alpha",

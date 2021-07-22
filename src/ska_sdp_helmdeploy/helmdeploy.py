@@ -17,7 +17,7 @@ import threading
 import yaml
 
 import ska_sdp_config
-from ska.logging import configure_logging
+from ska_ser_logging import configure_logging
 from dotenv import load_dotenv
 
 load_dotenv()
