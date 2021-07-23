@@ -20,6 +20,9 @@ import ska_sdp_config
 from ska_ser_logging import configure_logging
 from dotenv import load_dotenv
 
+
+from .monitor_daemon import monitor_workflows
+
 load_dotenv()
 
 # Load environment
@@ -227,12 +230,14 @@ def main_loop(backend=None):
     kube_config = os.getenv("KUBECONFIG")
     if kube_config is None:
         kube_config = os.getenv("HOME") + "/.kube/config"
-    for file in [kube_config, "/var/run/secrets/kubernetes.io"]:
-        if os.path.isfile(file):
-            monitor_thread = threading.Thread(
-                target=monitor_workflows, args=(client,), daemon=True
-            )
-            monitor_thread.start()
+    if os.path.isfile(kube_config) or (
+        os.getenv("KUBERNETES_SERVICE_HOST") is not None
+    ):
+        monitor_thread = threading.Thread(
+            target=monitor_workflows, args=(client,), daemon=True
+        )
+        monitor_thread.start()
+        log.info("Started POD monitoring thread")
 
     # Wait for something to happen
     for watcher in client.watcher(timeout=CHART_REPO_REFRESH):
