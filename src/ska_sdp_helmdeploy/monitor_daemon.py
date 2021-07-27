@@ -12,6 +12,7 @@ from kubernetes import client, config, watch
 LOG = logging.getLogger(__name__)
 
 # Configs can be set in Configuration class directly or using helper utility
+# Remote Kubernetes cluster with client access
 file = os.getenv("KUBECONFIG")
 if file is None:
     file = os.getenv("HOME") + "/.kube/config"
@@ -27,13 +28,15 @@ NAMESPACE = os.getenv("SDP_HELM_NAMESPACE", "sdp")
 
 def monitor_workflows(sdp_config):
     """
-    Daemon Thread to monitor deployed Workflows and to copy appropriate data back to the
+    Daemon Thread to monitor Workflows (via POD status in the and to copy appropriate data back to the
     Configuration Database
     """
     LOG.debug("Workflow monitoring started!")
 
     api_v1 = client.CoreV1Api()
     for event in watch.stream(api_v1.list_namespaced_pod, namespace=NAMESPACE):
+        # This will block indefnitely until any POD status changes - add <_request_timeout=secs>
+        # to introduce looping here (will need except ReadTimeoutError)
         pod = event["object"]
         LOG.debug(
             "Workflow POD name %s in phase %s", pod.metadata.name, pod.status.phase
@@ -57,6 +60,7 @@ def monitor_workflows(sdp_config):
             "k8s_lastlog": logstr.split("\n")[-4:-1],
         }
         LOG.debug("POD status %s", status)
+        # Transfer any required POD status to Configuration Database /pb/state
         if state is not None:
             state.update(status)
             for txn in sdp_config.txn():
