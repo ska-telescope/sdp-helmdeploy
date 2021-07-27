@@ -10,6 +10,7 @@ import logging
 from kubernetes import client, config, watch
 
 LOG = logging.getLogger(__name__)
+logging.getLogger("requests").setLevel(logging.WARNING)
 
 # Configs can be set in Configuration class directly or using helper utility
 # Remote Kubernetes cluster with client access
